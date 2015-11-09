@@ -1,18 +1,28 @@
 #!/bin/bash
 
+if [ "$#" -lt 3 ]; then
+	echo 'Intended usage'
+    echo '    run BOOST_ROOT TIMESTAMP SHA'
+    exit
+fi
+
 mkdir -p build
+mkdir -p results
 
 cd results
 for f in ../benchmarks/*.cpp; do
-    g++ -O2 -std="c++11" -I$BOOST_ROOT $f -o ../build/benchmark
+	rm -f ../build/benchmark
+    g++ -O2 -std="c++11" -I$1 $f -o ../build/benchmark
     for i in `seq 1 10`;
         do
-            ../build/benchmark >> $BENCHMARK_SHA
+            ../build/benchmark >> $3
         done
+	rm -f ../build/benchmark
 done
 
 g++ -std="c++11" ../report/report.cpp -o ../build/report
-# ./report $BENCHMARK_TIMESTAMP $BENCHMARK_SHA
+../build/report $2 $3
 
-#cd ..
-#rm -R build
+rm -f $3
+rm -Rf ../build
+

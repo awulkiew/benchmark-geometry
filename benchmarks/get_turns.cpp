@@ -81,7 +81,7 @@ int main()
                     polygon_t,
                     polygon_t,
                     detail::get_turns::get_turn_info_type<polygon_t, polygon_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, polygon, polygon_zero, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, polygon, polygon_zero);
         });
 
         benchmark::run("get_turns-polygon-min", [&]() {
@@ -92,7 +92,7 @@ int main()
                     polygon_t,
                     polygon_t,
                     detail::get_turns::get_turn_info_type<polygon_t, polygon_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, polygon, polygon_min, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, polygon, polygon_min);
         });
 
         benchmark::run("get_turns-polygon-max", [&]() {
@@ -103,7 +103,7 @@ int main()
                     polygon_t,
                     polygon_t,
                     detail::get_turns::get_turn_info_type<polygon_t, polygon_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, polygon, polygon_max, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, polygon, polygon_max);
         });
     }
 
@@ -119,7 +119,7 @@ int main()
                     linestring_t,
                     linestring_t,
                     detail::get_turns::get_turn_info_type<linestring_t, linestring_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, linestring, linestring_zero, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, linestring, linestring_zero);
         });
 
         benchmark::run("get_turns-linestring-min", [&]() {
@@ -130,7 +130,7 @@ int main()
                     linestring_t,
                     linestring_t,
                     detail::get_turns::get_turn_info_type<linestring_t, linestring_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, linestring, linestring_min, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, linestring, linestring_min);
         });
 
         benchmark::run("get_turns-linestring-max", [&]() {
@@ -141,7 +141,7 @@ int main()
                     linestring_t,
                     linestring_t,
                     detail::get_turns::get_turn_info_type<linestring_t, linestring_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, linestring, linestring_max, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, linestring, linestring_max);
         });
 
         benchmark::run("get_turns-linestring-zigzag", [&]() {
@@ -152,7 +152,7 @@ int main()
                     linestring_t,
                     linestring_t,
                     detail::get_turns::get_turn_info_type<linestring_t, linestring_t, detail::relate::turns::assign_policy<true> >
-                >::apply(turns, linestring_zigzag1, linestring_zigzag2, detail::get_turns::no_interrupt_policy());
+                >::apply(turns, linestring_zigzag1, linestring_zigzag2);
         });
     }
 

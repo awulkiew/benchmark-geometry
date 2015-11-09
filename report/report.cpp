@@ -8,25 +8,27 @@
 #include <tuple>
 #include <vector>
 
-template <typename Os>
-inline std::stringstream getlinestream(Os && os)
+template <typename Is, typename T>
+inline void read(Is & is, T& t)
+{
+    is >> t;
+}
+
+template <typename Is, typename T, typename... Ts>
+inline void read(Is & is, T& t, Ts&... ts)
+{
+    read(is, t);
+    read(is, ts...);
+}
+
+template <typename Is, typename... Ts>
+inline void readline(Is & is, Ts&... ts)
 {
     std::string line;
-    std::getline(os, line);
-    return std::stringstream(line);
-}
+    std::getline(is, line);
+    std::stringstream ss(line);
 
-template <typename Os, typename T>
-inline void read(Os && os, T& t)
-{
-    os >> t;
-}
-
-template <typename Os, typename T, typename... Ts>
-inline void read(Os && os, T& t, Ts&... ts)
-{
-    read(os, t);
-    read(os, ts...);
+    read(ss, ts...);
 }
 
 struct result_times
@@ -74,7 +76,7 @@ int main(int argc, char * argv[])
         // load test name and time
         std::string test_name;
         double test_time = 0.0;
-        read(getlinestream(commit_file), test_name, test_time);
+        readline(commit_file, test_name, test_time);
                 
         // append the time to the container
         if (!test_name.empty())
@@ -113,7 +115,7 @@ int main(int argc, char * argv[])
                 while (test_file.good())
                 {
                     result_times result;
-                    read(getlinestream(test_file), result.timestamp, result.sha, result.avg, result.min, result.max);
+                    readline(test_file, result.timestamp, result.sha, result.avg, result.min, result.max);
                     if (!result.timestamp.empty() && !result.sha.empty())
                     {
                         results.push_back(result);
@@ -210,7 +212,7 @@ int main(int argc, char * argv[])
                 << "</style></head><body>";
 
             // TOC
-            test_file << "<div style=\"float:left; vertical-align: top; width:200px;\">"
+            test_file << "<div style=\"float:left; vertical-align: top; width:256px;\">"
                       << "<h2 style=\"margin-top:0;\">Benchmarks</h2>"
                       << "<ul style=\"list-style-type:none; padding: 0;\">";
             for (auto const& t : tests)
@@ -219,7 +221,7 @@ int main(int argc, char * argv[])
             }
             test_file << "</ul></div>";
 
-            test_file << "<div style=\"margin-left:200px; width: 1100px;\">";
+            test_file << "<div style=\"margin-left:256px; width: 1100px;\">";
             for (auto const& t : tests)
             {
                 test_file << "<h3 id=\"" << t.first << "\" style=\"margin-bottom:0;\">" << t.first << "</h3>";
