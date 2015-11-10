@@ -12,19 +12,17 @@ mkdir -p results
 cd results
 for f in ../benchmarks/*.cpp; do
     rm -f ../build/benchmark
-#    echo "Compiling $f";
+    echo "Benchmarking: $f";
     g++ -O2 -std="c++11" -I$1 $f -o ../build/benchmark
-    for i in `seq 1 10`;
+    for i in `seq 1 20`;
         do
-#            echo "Run $i"
             ../build/benchmark >> $3
         done
 	rm -f ../build/benchmark
 done
 
-#echo 'Compiling report generator';
+echo 'Generating report';
 g++ -std="c++11" ../report/report.cpp -o ../build/report
-#echo 'Generating report';
 ../build/report $2 $3
 
 rm -f $3
