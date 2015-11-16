@@ -2,7 +2,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <map>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -12,6 +14,17 @@ template <typename Is, typename T>
 inline void read(Is & is, T& t)
 {
     is >> t;
+}
+
+template <typename Is, typename T>
+inline void read(Is & is, std::vector<T>& vec)
+{
+    while (is.good())
+    {
+        T tmp;
+        read(is, tmp);
+        vec.push_back(tmp);
+    }
 }
 
 template <typename Is, typename T, typename... Ts>
@@ -35,19 +48,15 @@ struct result_times
 {
     result_times() = default;
 
-    result_times(std::string const& ts, std::string const& sh, double av, double mi, double ma)
+    result_times(std::string const& ts, std::string const& sh, std::vector<double> const& ti)
         : timestamp(ts)
         , sha(sh)
-        , avg(av)
-        , min(mi)
-        , max(ma)
+        , times(ti)
     {}
 
     std::string timestamp;
     std::string sha;
-    double avg;
-    double min;
-    double max;
+    std::vector<double> times;
 };
 
 int main(int argc, char * argv[])
@@ -91,20 +100,6 @@ int main(int argc, char * argv[])
         if (t.second.empty())
             continue;
 
-        // calculate the min, max and avg time
-        double time_min = t.second[0];
-        double time_avg = 0.0;
-        double time_max = t.second[0];
-        for (auto sec : t.second)
-        {
-            if (sec < time_min)
-                time_min = sec;
-            if (sec > time_max)
-                time_max = sec;
-            time_avg += sec;
-        }
-        time_avg /= t.second.size();
-
         // create a container for commits times
         std::vector<result_times> results;
         {
@@ -115,7 +110,7 @@ int main(int argc, char * argv[])
                 while (test_file.good())
                 {
                     result_times result;
-                    readline(test_file, result.timestamp, result.sha, result.avg, result.min, result.max);
+                    readline(test_file, result.timestamp, result.sha, result.times);
                     if (!result.timestamp.empty() && !result.sha.empty())
                     {
                         results.push_back(result);
@@ -124,7 +119,7 @@ int main(int argc, char * argv[])
             }
         }
 
-        result_times current_result(commit_time, commit_name, time_avg, time_min, time_max);
+        result_times current_result(commit_time, commit_name, t.second);
 
         // merge the latest result
         auto it = std::find_if(results.begin(), results.end(), [&](result_times const& r) { return r.sha == commit_name; });
@@ -147,7 +142,8 @@ int main(int argc, char * argv[])
             {
                 for (auto const& r : results)
                 {
-                    test_file << r.timestamp << " " << r.sha << " " << std::fixed << std::setprecision(12) << r.avg << " " << r.min << " " << r.max << std::endl;
+                    test_file << r.timestamp << " " << r.sha << " " << std::fixed << std::setprecision(12);
+                    std::copy(r.times.begin(), r.times.end(), std::ostream_iterator<double>(test_file, " "));
                 }
             }
         }
@@ -157,49 +153,79 @@ int main(int argc, char * argv[])
             std::ofstream test_file(t.first + ".html", std::ios::trunc);
             if (test_file.is_open())
             {
-                test_file
-                    << "<html><head>"
-                    << "<script type=\"text/javascript\" src=\"https://www.google.com/jsapi\"></script>"
-                    << "<script type=\"text/javascript\">"
-                    << "google.load(\"visualization\", \"1\", { packages:[\"corechart\"] });"
-                    << "google.setOnLoadCallback(drawChart);"
-
-                    << "function drawChart() {"
-                    << "var data = new google.visualization.DataTable();"
-                    << "data.addColumn('string', 'sha');"
-                    << "data.addColumn('number', 'time');"
-                    << "data.addColumn({ id:'i0', type : 'number', role : 'interval' });"
-                    << "data.addColumn({ id:'i1', type : 'number', role : 'interval' });"
-                    << "data.addRows([";
-
-                bool first = true;
+                size_t max_times_size = 0;
                 for (auto const& r : results)
                 {
-                    if (!first)
-                        test_file << ",";
-                    else
-                        first = false;
-                    std::string sha = r.sha;
-                    if (sha.size() > 7)
-                        sha.resize(7);
-                    test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << r.avg << ", " << r.min << ", " << r.max << "]" << std::endl;
+                    if (r.times.size() > max_times_size)
+                        max_times_size = r.times.size();
                 }
 
-                test_file
-                    << "]);"
+                if (max_times_size > 0)
+                {
+                    test_file
+                        << "<html><head>"
+                        << "<script type=\"text/javascript\" src=\"https://www.google.com/jsapi\"></script>"
+                        << "<script type=\"text/javascript\">"
+                        << "google.load(\"visualization\", \"1\", { packages:[\"corechart\"] });"
+                        << "google.setOnLoadCallback(drawChart);"
 
-                    << "var options = {"
-                    << "curveType : 'none',"
-                    << "legend : 'none'"
-                    << "};"
+                        << "function drawChart() {"
+                        << "var data = new google.visualization.DataTable();"
+                        << "data.addColumn('string', 'sha');"
+                        << "data.addColumn('number', 'time');"
+                        << "data.addColumn({ id:'i0', type : 'number', role : 'interval' });";
+                    if (max_times_size >= 2)
+                        test_file << "data.addColumn({ id:'i1', type : 'number', role : 'interval' });";
+                    for (size_t i = 2; i < max_times_size; ++i)
+                        test_file << "data.addColumn({ id:'i2', type : 'number', role : 'interval' });";
 
-                    << "var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));"
-                    << "chart_lines.draw(data, options);"
-                    << "}"
-                    << "</script>"
-                    << "</head><body style=\"margin:0;\">"
-                    << "<div id = \"chart_lines\" style = \"width: 1024px; height: 256px;\"></div>"
-                    << "</body></html>";
+                    test_file << "data.addRows([";
+
+                    bool first = true;
+                    for (auto const& r : results)
+                    {
+                        if (r.times.empty())
+                            continue;
+
+                        if (!first)
+                            test_file << ",";
+                        else
+                            first = false;
+
+                        double avg = std::accumulate(r.times.begin(), r.times.end(), 0.0) / r.times.size();
+
+                        std::string sha = r.sha;
+                        if (sha.size() > 7)
+                            sha.resize(7);
+
+                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << avg << ", ";
+                        for (size_t i = 0; i < max_times_size; ++i)
+                        {
+                            if (i > 0)
+                                test_file << ", ";
+                            if (i < r.times.size())
+                                test_file << r.times[i];
+                        }
+                        test_file << "]" << std::endl;
+                    }
+
+                    test_file
+                        << "]);"
+
+                        << "var options = {"
+                        << "curveType : 'none',"
+                        << "intervals: { 'style':'points', pointSize: 5 },"
+                        << "legend : 'none'"
+                        << "};"
+
+                        << "var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));"
+                        << "chart_lines.draw(data, options);"
+                        << "}"
+                        << "</script>"
+                        << "</head><body style=\"margin:0;\">"
+                        << "<div id = \"chart_lines\" style = \"width: 1024px; height: 256px;\"></div>"
+                        << "</body></html>";
+                }
             }
         }
 
