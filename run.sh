@@ -6,25 +6,6 @@ if [ "$#" -lt 3 ]; then
     exit
 fi
 
-mkdir -p build
-mkdir -p results
-
-cd results
-for f in ../benchmarks/*.cpp; do
-    rm -f ../build/benchmark
-    echo "Benchmarking: $f";
-    g++ -O2 -std="c++11" -I$1 $f -o ../build/benchmark
-    for i in `seq 1 20`;
-        do
-            ../build/benchmark >> $3
-        done
-	rm -f ../build/benchmark
-done
-
-echo 'Generating report';
-g++ -std="c++11" ../report/report.cpp -o ../build/report
-../build/report $2 $3
-
-rm -f $3
-rm -Rf ../build
-
+./run_benchmarks.sh $1 $2 $3
+./run_report.sh $2 $3
+./run_clean.sh $3
