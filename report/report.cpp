@@ -61,16 +61,19 @@ struct result_times
 
 int main(int argc, char * argv[])
 {
-    // path, sha, time
-    if (argc < 3)
+    // path, sha, time, output-dir
+    if (argc < 4)
     {
-        std::cout << "Intended usage:\n    report TIME SHA" << std::endl;
+        std::cout << "Intended usage:\n    report TIME SHA OUTPUT-DIR" << std::endl;
         return 1;
     }
 
-    // load commit file
     std::string commit_time = argv[1];
     std::string commit_name = argv[2];
+    std::string output_dir_name = argv[3];
+    std::string output_dir_prefix = output_dir_name.empty() ? "" : output_dir_name + "/";
+
+    // load commit file
     std::ifstream commit_file(commit_name);
     if (!commit_file.is_open())
     {
@@ -104,7 +107,7 @@ int main(int argc, char * argv[])
         std::vector<result_times> results;
         {
             // load the currently stored commits times
-            std::ifstream test_file(t.first + ".txt");
+            std::ifstream test_file(output_dir_prefix + t.first + ".txt");
             if (test_file.is_open())
             {
                 while (test_file.good())
@@ -137,7 +140,7 @@ int main(int argc, char * argv[])
 
         // save the commit file
         {
-            std::ofstream test_file(t.first + ".txt", std::ios::trunc);
+            std::ofstream test_file(output_dir_prefix + t.first + ".txt", std::ios::trunc);
             if (test_file.is_open())
             {
                 for (auto const& r : results)
@@ -150,7 +153,7 @@ int main(int argc, char * argv[])
 
         //save html chart file
         {
-            std::ofstream test_file(t.first + ".html", std::ios::trunc);
+            std::ofstream test_file(output_dir_prefix + t.first + ".html", std::ios::trunc);
             if (test_file.is_open())
             {
                 size_t max_times_size = 0;
@@ -231,7 +234,7 @@ int main(int argc, char * argv[])
 
         // problem: if a test won't be in the commit file the chart won't be included here
         {
-            std::ofstream test_file("index.html", std::ios::trunc);
+            std::ofstream test_file(output_dir_prefix + "index.html", std::ios::trunc);
             test_file
                 << "<html><head><style>"
                 << "iframe{ display: block; overflow: hidden; width: 1050px; height: 260px; border: 0; }"

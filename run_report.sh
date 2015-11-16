@@ -6,6 +6,8 @@ if [ "$#" -lt 2 ]; then
     exit
 fi
 
+mkdir -p results
+
 echo 'Generating report';
 g++ -std="c++11" report/report.cpp -o build/report
-cd results && ../build/report $1 $2
+cd temp && ../build/report $1 $2 ../results

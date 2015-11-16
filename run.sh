@@ -6,6 +6,5 @@ if [ "$#" -lt 3 ]; then
     exit
 fi
 
-./run_benchmarks.sh $1 $2 $3
+./run_benchmarks.sh $1 $3
 ./run_report.sh $2 $3
-./run_clean.sh $3
