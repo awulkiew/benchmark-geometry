@@ -202,7 +202,7 @@ int main(int argc, char * argv[])
                         if (sha.size() > 7)
                             sha.resize(7);
 
-                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << avg;
+                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << avg << ", ";
                         for (size_t i = 0; i < max_times_size; ++i)
                         {
                             if (i < r.times.size())
