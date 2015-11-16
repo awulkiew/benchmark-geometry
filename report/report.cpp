@@ -183,7 +183,7 @@ int main(int argc, char * argv[])
                     for (size_t i = 2; i < max_times_size; ++i)
                         test_file << "data.addColumn({ id:'i2', type : 'number', role : 'interval' });";
 
-                    test_file << "data.addRows([";
+                    test_file << "data.addRows([" << std::endl;
 
                     bool first = true;
                     for (auto const& r : results)
@@ -202,13 +202,13 @@ int main(int argc, char * argv[])
                         if (sha.size() > 7)
                             sha.resize(7);
 
-                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << avg << ", ";
+                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << avg;
                         for (size_t i = 0; i < max_times_size; ++i)
                         {
-                            if (i > 0)
-                                test_file << ", ";
                             if (i < r.times.size())
                                 test_file << r.times[i];
+
+                            test_file << ", "; // last empty element must be ended with comma and for non-empty elements it doesn't matter
                         }
                         test_file << "]" << std::endl;
                     }
