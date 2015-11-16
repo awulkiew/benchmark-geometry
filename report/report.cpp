@@ -147,6 +147,7 @@ int main(int argc, char * argv[])
                 {
                     test_file << r.timestamp << " " << r.sha << " " << std::fixed << std::setprecision(12);
                     std::copy(r.times.begin(), r.times.end(), std::ostream_iterator<double>(test_file, " "));
+                    test_file << std::endl;
                 }
             }
         }
