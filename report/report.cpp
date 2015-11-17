@@ -186,7 +186,7 @@ int main(int argc, char * argv[])
                     test_file << "data.addRows([" << std::endl;
 
                     bool first = true;
-                    for (auto const& r : results)
+                    for (auto & r : results)
                     {
                         if (r.times.empty())
                             continue;
@@ -196,13 +196,19 @@ int main(int argc, char * argv[])
                         else
                             first = false;
 
-                        double avg = std::accumulate(r.times.begin(), r.times.end(), 0.0) / r.times.size();
+                        //double mean = std::accumulate(r.times.begin(), r.times.end(), 0.0) / r.times.size();
 
+                        std::sort(r.times.begin(), r.times.end());
+                        size_t index_mid = r.times.size() / 2;
+                        double median = r.times.size() % 2 != 0 ?
+                            r.times[index_mid] :
+                            (r.times[index_mid] + r.times[index_mid - 1]) / 2.0;
+                        
                         std::string sha = r.sha;
                         if (sha.size() > 7)
                             sha.resize(7);
 
-                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << avg << ", ";
+                        test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << median << ", ";
                         for (size_t i = 0; i < max_times_size; ++i)
                         {
                             if (i < r.times.size())
