@@ -228,12 +228,21 @@ int main(int argc, char * argv[])
                         << "legend : 'none'"
                         << "};"
 
-                        << "var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));"
-                        << "chart_lines.draw(data, options);"
+                        << "var chart = new google.visualization.LineChart(document.getElementById('chart'));"
+                        << "chart.draw(data, options);"
+
+                        << "var selectHandler = function(e) {"
+                        << "var loc = 'https://github.com/boostorg/geometry/commit/' + data.getValue(chart.getSelection()[0]['row'], 0 );"
+                        << "window.location = loc;"
+                        << "window.top.location = loc;"
+                        << "}"
+
+                        << "google.visualization.events.addListener(chart, 'select', selectHandler);"
+
                         << "}"
                         << "</script>"
                         << "</head><body style=\"margin:0;\">"
-                        << "<div id = \"chart_lines\" style = \"width: 1024px; height: 256px;\"></div>"
+                        << "<div id = \"chart\" style = \"width: 1024px; height: 256px;\"></div>"
                         << "</body></html>";
                 }
             }
@@ -255,7 +264,9 @@ int main(int argc, char * argv[])
             {
                 test_file << "<li><a href=\"#" << t.first << "\">" << t.first << "</a></li>";
             }
-            test_file << "</ul></div>";
+            test_file << "</ul>"
+                      << "Click on a sample to go to the GitHub page corresponding to a commit."
+                      << "</div>";
 
             test_file << "<div style=\"margin-left:256px; width: 1100px;\">";
             for (auto const& t : tests)
