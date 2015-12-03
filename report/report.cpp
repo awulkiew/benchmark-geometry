@@ -235,7 +235,7 @@ int main(int argc, char * argv[])
                         << "var loc = 'https://github.com/boostorg/geometry/commit/' + data.getValue(chart.getSelection()[0]['row'], 0 );"
                         << "window.location = loc;"
                         << "window.top.location = loc;"
-                        << "}"
+                        << "};"
 
                         << "google.visualization.events.addListener(chart, 'select', selectHandler);"
 
