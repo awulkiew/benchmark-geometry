@@ -6,18 +6,30 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <fstream>
 
 namespace benchmark {
 
-template <typename Clock, typename Fun>
-double run(Fun fun, size_t count)
+std::ofstream & dump_ostream()
 {
+    static std::ofstream f;
+    return f;
+}
+
+template <typename Clock, typename Fun, typename Dump>
+double run(Fun fun, size_t count, Dump & dump)
+{
+    using result_t = decltype(fun());
+    result_t result = result_t();
+
     auto start = Clock::now();
     for (size_t i = 0; i < count; ++i)
     {
-        fun();
+        result += fun();
     }
     auto end = Clock::now();
+
+    dump << result;
 
     std::chrono::duration<double> elapsed = end - start;
     return elapsed.count();
@@ -34,7 +46,7 @@ void run(std::string const& name, Fun fun, std::ostream & out = std::cout)
         double seconds = 0;
         for (; base_count < 1000000; base_count *= 10)
         {
-            seconds = run<std::chrono::high_resolution_clock>(fun, base_count);
+            seconds = run<std::chrono::high_resolution_clock>(fun, base_count, dump_ostream());
 
             if (seconds >= 0.01)
                 break;
@@ -44,7 +56,7 @@ void run(std::string const& name, Fun fun, std::ostream & out = std::cout)
 
         if (count >= 2)
         {
-            seconds = run<std::chrono::high_resolution_clock>(fun, count) / count;
+            seconds = run<std::chrono::high_resolution_clock>(fun, count, dump_ostream()) / count;
         }
 
         out << name << " " << std::fixed << std::setprecision(12) << seconds << std::endl;

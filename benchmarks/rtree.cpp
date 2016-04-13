@@ -23,6 +23,7 @@ void benchmark_queries(std::string const& name, Rtree tree, Input input, size_t 
         { get<0>(input[i].max_corner()) - 10, get<1>(input[i].max_corner()) + 10 } };
         tree.query(index::intersects(qbox), std::back_inserter(res));
         i = (i + 1) % N;
+        return res.size();
     });
 
     i = 0;
@@ -31,6 +32,7 @@ void benchmark_queries(std::string const& name, Rtree tree, Input input, size_t 
         point_t qpt{ get<0>(input[i].min_corner()) + 0.5f, get<1>(input[i].min_corner()) + 0.5f };
         tree.query(index::nearest(qpt, 3), std::back_inserter(res));
         i = (i + 1) % N;
+        return res.size();
     });
 }
 
@@ -57,9 +59,11 @@ void benchmark_rtree()
     {
         typedef index::rtree<box_t, index::linear<16>> rtree_t;
         rtree_t tree;
+
         benchmark::run("rtree-pack-create", [&]() {
             rtree_t t(input.begin(), input.end());
             tree = std::move(t);
+            return tree.size();
         });
                 
         benchmark_queries("rtree-pack", tree, input, N);
@@ -73,6 +77,7 @@ void benchmark_rtree()
             rtree_t t;
             t.insert(input.begin(), input.end());
             tree = std::move(t);
+            return tree.size();
         });
 
         benchmark_queries("rtree-linear", tree, input, N);
@@ -86,6 +91,7 @@ void benchmark_rtree()
             rtree_t t;
             t.insert(input.begin(), input.end());
             tree = std::move(t);
+            return tree.size();
         });
 
         benchmark_queries("rtree-quadratic", tree, input, N);
@@ -99,6 +105,7 @@ void benchmark_rtree()
             rtree_t t;
             t.insert(input.begin(), input.end());
             tree = std::move(t);
+            return tree.size();
         });
 
         benchmark_queries("rtree-rstar", tree, input, N);
