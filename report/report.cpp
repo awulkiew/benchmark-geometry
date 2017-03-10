@@ -76,6 +76,38 @@ struct result_times
     std::vector<double> times;
 };
 
+struct non_first_comma
+{
+    bool first;
+    non_first_comma() : first(true) {}
+    const char * get()
+    {
+        if (first)
+        {
+            first = false;
+            return "";
+        }
+        else
+        {
+            return ",";
+        }
+    }
+};
+
+template <typename RIt>
+inline double calculate_median(RIt first, RIt last)
+{
+    std::size_t size = std::distance(first, last);
+    if (size < 1)
+        return 0.0;
+    std::sort(first, last);
+    size_t index_mid = size / 2;
+    RIt mid = first + index_mid;
+    return size % 2 != 0 ?
+        *mid :
+        (*mid + *(mid - 1)) / 2.0;
+}
+
 int main(int argc, char * argv[])
 {
     // path, sha, time, output-dir
@@ -173,7 +205,56 @@ int main(int argc, char * argv[])
         }
     }
 
+    // save js containing json
+    {
+        std::ofstream file(output_dir_prefix + "data.js", std::ios::trunc);
+
+        if(! file.is_open())
+            return 0;
+
+        file << std::fixed << std::setprecision(12);
+        file << "data_json = '[";
+
+        non_first_comma comma;
+        for (auto & t : all_tests)
+        {
+            // non-const ref because times are sorted below in order to find median
+            std::vector<result_times> & results = t.second;
+
+            std::string id = to_valid_id(t.first);
+            
+            file << comma.get() << "{" /*<< std::endl*/;
+
+            file << "\"name\": \"" << t.first << "\"," /*<< std::endl*/;
+            file << "\"id\": \"" << id << "\"," /*<< std::endl*/;
+            file << "\"results\": [";
+
+            non_first_comma comma;
+            for (auto & r : results)
+            {
+                file << comma.get() << "{" /*<< std::endl*/;
+                file << "\"timestamp\": \"" << r.timestamp << "\"," /*<< std::endl*/;
+                file << "\"sha\": \"" << r.sha << "\"," /*<< std::endl*/;
+                file << "\"median\": " << calculate_median(r.times.begin(), r.times.end()) << "," /*<< std::endl*/;
+                file << "\"times\": [";
+
+                non_first_comma comma;
+                for (size_t i = 0; i < r.times.size(); ++i)
+                {
+                    file << comma.get() << r.times[i];
+                }
+
+                file << "]"/* << std::endl*/ << "}";
+            }
+            
+            file << "]"/* << std::endl*/ << "}";
+        }
+
+        file << "]';"/* << std::endl*/;
+    }
+
     // save html
+    /*
     {
         std::ofstream test_file(output_dir_prefix + "index.html", std::ios::trunc);
         
@@ -219,16 +300,13 @@ int main(int argc, char * argv[])
 
                 test_file << "data.addRows([" << std::endl;
 
-                bool first = true;
+                non_first_comma comma;
                 for (auto & r : results)
                 {
                     if (r.times.empty())
                         continue;
 
-                    if (!first)
-                        test_file << ",";
-                    else
-                        first = false;
+                    test_file << comma.get();
 
                     //double mean = std::accumulate(r.times.begin(), r.times.end(), 0.0) / r.times.size();
 
@@ -295,6 +373,7 @@ int main(int argc, char * argv[])
         test_file
             << "</body></html>";
     }
+    */
 
     return 0;
 }
