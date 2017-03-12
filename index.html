@@ -16,20 +16,28 @@
 		
 		var table = new google.visualization.DataTable();		
 		table.addColumn('string', 'sha');
-		table.addColumn('number', 'time');
-		table.addColumn({ id:'i0', type : 'number', role : 'interval' });
-		if (max_times_size >= 2)
-			table.addColumn({ id:'i1', type : 'number', role : 'interval' });
-		for (var i = 2; i < max_times_size; ++i)
-			table.addColumn({ id:'i2', type : 'number', role : 'interval' });
+		table.addColumn('number', 'time32');
+		for (var i = 0; i < max_times_size; ++i)
+			table.addColumn({type : 'number', role : 'interval' });
+		table.addColumn('number', 'time64');
+		for (var i = 0; i < max_times_size; ++i)
+			table.addColumn({type : 'number', role : 'interval' });
 		
 		for (var i = 0; i < test.results.length; ++i) {
 			var result = test.results[i];
-			var row = [result.sha.substring(0, 7), result.median];
-			for (var j = 0; j < result.times.length; ++j) {
-				row.push(result.times[j]);
+			var row = [result.sha.substring(0, 7)];
+			row.push(result.median_32);
+			for (var j = 0; j < result.times_32.length; ++j) {
+				row.push(result.times_32[j]);
 			}
-			for (var j = result.times.length; j < max_times_size; ++j) {
+			for (var j = result.times_32.length; j < max_times_size; ++j) {
+				row.push(null);
+			}
+			row.push(result.median_64);
+			for (var j = 0; j < result.times_64.length; ++j) {
+				row.push(result.times_64[j]);
+			}
+			for (var j = result.times_64.length; j < max_times_size; ++j) {
 				row.push(null);
 			}
 			table.addRow(row);
@@ -88,9 +96,12 @@
 			
 			var max_times_size = 0;
 			for (j = 0; j < data[i].results.length; j++) {
-				var times = data[i].results[j].times;
-				if (times.length > max_times_size)
-					max_times_size = times.length;
+				var times_32 = data[i].results[j].times_32;
+				var times_64 = data[i].results[j].times_64;
+				if (times_32.length > max_times_size)
+					max_times_size = times_32.length;
+				if (times_64.length > max_times_size)
+					max_times_size = times_64.length;
 			}
 			max_times_sizes[i] = max_times_size;
 			
