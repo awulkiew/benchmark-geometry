@@ -63,17 +63,22 @@ inline std::string to_valid_id(std::string const& str)
 
 struct result_times
 {
-    result_times() = default;
-
-    result_times(std::string const& ts, std::string const& sh, std::vector<double> const& ti)
-        : timestamp(ts)
-        , sha(sh)
-        , times(ti)
-    {}
-
     std::string timestamp;
     std::string sha;
-    std::vector<double> times;
+    std::vector<double> times_32;
+    std::vector<double> times_64;
+};
+
+struct get_times_32
+{
+    std::vector<double> & operator()(result_times & rt) const { return rt.times_32; }
+    std::vector<double> const& operator()(result_times const& rt) const { return rt.times_32; }
+};
+
+struct get_times_64
+{
+    std::vector<double> & operator()(result_times & rt) const { return rt.times_64; }
+    std::vector<double> const& operator()(result_times const& rt) const { return rt.times_64; }
 };
 
 struct non_first_comma
@@ -108,46 +113,48 @@ inline double calculate_median(RIt first, RIt last)
         (*mid + *(mid - 1)) / 2.0;
 }
 
-int main(int argc, char * argv[])
-{
-    // path, sha, time, output-dir
-    if (argc < 4)
-    {
-        std::cout << "Intended usage:\n    report TIME SHA OUTPUT-DIR" << std::endl;
-        return 1;
-    }
+typedef std::map<std::string, std::vector<double>> new_tests_map;
+typedef std::map<std::string, std::vector<result_times>> tests_map;
 
-    std::string commit_time = argv[1];
-    std::string commit_name = argv[2];
-    std::string output_dir_name = argv[3];
-    std::string output_dir_prefix = output_dir_name.empty() ? "" : output_dir_name + "/";
+inline bool load_new_results(std::string const& commit_file_path,
+                             new_tests_map & new_tests)
+{
+    new_tests.clear();
 
     // load commit file
-    std::ifstream commit_file(commit_name);
+    std::ifstream commit_file(commit_file_path);
     if (!commit_file.is_open())
     {
-        std::cout << "Unable to open file " << commit_name << std::endl;
-        return 1;
+        std::cout << "Unable to open file " << commit_file_path << std::endl;
+        return false;
     }
 
     // load all of the test results, name and the container of times for this test
-    std::map<std::string, std::vector<double>> new_tests;
     while (commit_file.good())
     {
         // load test name and time
         std::string test_name;
         double test_time = 0.0;
         readline(commit_file, test_name, test_time);
-                
+
         // append the time to the container
         if (!test_name.empty())
         {
             new_tests[test_name].push_back(test_time);
         }
     }
-    
-    // load old tests, integrate new tests and save data
-    std::map<std::string, std::vector<result_times>> all_tests;
+
+    return ! new_tests.empty();
+}
+
+template <typename GetTimes>
+inline void load_old_results_integrate_and_save(std::string const& output_dir_prefix,
+                                                std::string const& commit_time,
+                                                std::string const& commit_name,
+                                                new_tests_map const& new_tests,
+                                                tests_map & all_tests,
+                                                GetTimes get_times)
+{
     // for each test (name and container of times)
     for (auto const& t : new_tests)
     {
@@ -159,7 +166,7 @@ int main(int argc, char * argv[])
             while (test_file.good())
             {
                 result_times result;
-                readline(test_file, result.timestamp, result.sha, result.times);
+                readline(test_file, result.timestamp, result.sha, get_times(result));
                 if (!result.timestamp.empty() && !result.sha.empty())
                 {
                     results.push_back(result);
@@ -167,7 +174,10 @@ int main(int argc, char * argv[])
             }
         }
 
-        result_times current_result(commit_time, commit_name, t.second);
+        result_times current_result;
+        current_result.timestamp = commit_time;
+        current_result.sha = commit_name;
+        get_times(current_result) = t.second;
 
         // merge the latest result
         auto it = std::find_if(results.begin(), results.end(),
@@ -198,12 +208,43 @@ int main(int argc, char * argv[])
                 for (auto const& r : results)
                 {
                     test_file << r.timestamp << " " << r.sha << " " << std::fixed << std::setprecision(12);
-                    std::copy(r.times.begin(), r.times.end(), std::ostream_iterator<double>(test_file, " "));
+                    std::copy(get_times(r).begin(), get_times(r).end(), std::ostream_iterator<double>(test_file, " "));
                     test_file << std::endl;
                 }
             }
         }
     }
+}
+
+int main(int argc, char * argv[])
+{
+    // path, sha, time, output-dir
+    if (argc < 4)
+    {
+        std::cout << "Intended usage:\n    report TIME SHA OUTPUT-DIR" << std::endl;
+        return 1;
+    }
+
+    std::string commit_time = argv[1];
+    std::string commit_name = argv[2];
+    std::string output_dir_name = argv[3];
+    std::string output_dir_prefix = output_dir_name.empty() ? "" : output_dir_name + "/";
+
+    new_tests_map new_tests_32, new_tests_64;
+    bool ok = load_new_results(std::string("m32/") + commit_name, new_tests_32)
+           || load_new_results(std::string("m64/") + commit_name, new_tests_64);
+
+    if (! ok)
+    {
+        return 1;
+    }
+
+    // load old tests, integrate new tests and save data
+    tests_map all_tests;
+    load_old_results_integrate_and_save(output_dir_prefix + "m32/", commit_time, commit_name,
+                                        new_tests_32, all_tests, get_times_32());
+    load_old_results_integrate_and_save(output_dir_prefix + "m64/", commit_time, commit_name,
+                                        new_tests_64, all_tests, get_times_64());
 
     // save js containing json
     {
@@ -235,16 +276,27 @@ int main(int argc, char * argv[])
                 file << comma.get() << "{" /*<< std::endl*/;
                 file << "\"timestamp\": \"" << r.timestamp << "\"," /*<< std::endl*/;
                 file << "\"sha\": \"" << r.sha << "\"," /*<< std::endl*/;
-                file << "\"median\": " << calculate_median(r.times.begin(), r.times.end()) << "," /*<< std::endl*/;
-                file << "\"times\": [";
-
-                non_first_comma comma;
-                for (size_t i = 0; i < r.times.size(); ++i)
+                file << "\"median_32\": " << calculate_median(r.times_32.begin(), r.times_32.end()) << "," /*<< std::endl*/;
+                file << "\"median_64\": " << calculate_median(r.times_64.begin(), r.times_64.end()) << "," /*<< std::endl*/;
+                file << "\"times_32\": [";
                 {
-                    file << comma.get() << r.times[i];
+                    non_first_comma comma;
+                    for (size_t i = 0; i < r.times_32.size(); ++i)
+                    {
+                        file << comma.get() << r.times_32[i];
+                    }
                 }
-
-                file << "]"/* << std::endl*/ << "}";
+                file << "],"/* << std::endl*/;
+                file << "\"times_64\": [";
+                {
+                    non_first_comma comma;
+                    for (size_t i = 0; i < r.times_64.size(); ++i)
+                    {
+                        file << comma.get() << r.times_64[i];
+                    }
+                }
+                file << "]"/* << std::endl*/;
+                file << "}";
             }
             
             file << "]"/* << std::endl*/ << "}";
@@ -252,128 +304,6 @@ int main(int argc, char * argv[])
 
         file << "]';"/* << std::endl*/;
     }
-
-    // save html
-    /*
-    {
-        std::ofstream test_file(output_dir_prefix + "index.html", std::ios::trunc);
-        
-        if (! test_file.is_open())
-            return 0;
-        
-        test_file
-            << "<html><head>" << std::endl
-            << "<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script>" << std::endl
-            << "<script type=\"text/javascript\">" << std::endl
-            << "google.charts.load('current', {'packages':['corechart']});" << std::endl;
-
-        for (auto & t : all_tests)
-        {
-            // non-const ref because times are sorted below in order to find median
-            std::vector<result_times> & results = t.second;
-
-            std::string id = to_valid_id(t.first);
-            std::string draw_function = std::string("draw_") + id;
-            std::string elem_id = std::string("chart_") + id;
-
-            size_t max_times_size = 0;
-            for (auto const& r : results)
-            {
-                if (r.times.size() > max_times_size)
-                    max_times_size = r.times.size();
-            }
-
-            if (max_times_size > 0)
-            {
-                test_file
-                    << "google.charts.setOnLoadCallback(" << draw_function << ");" << std::endl
-
-                    << "function " << draw_function << "() {" << std::endl
-                    << "var data = new google.visualization.DataTable();" << std::endl
-                    << "data.addColumn('string', 'sha');" << std::endl
-                    << "data.addColumn('number', 'time');" << std::endl
-                    << "data.addColumn({ id:'i0', type : 'number', role : 'interval' });" << std::endl;
-                if (max_times_size >= 2)
-                    test_file << "data.addColumn({ id:'i1', type : 'number', role : 'interval' });" << std::endl;
-                for (size_t i = 2; i < max_times_size; ++i)
-                    test_file << "data.addColumn({ id:'i2', type : 'number', role : 'interval' });" << std::endl;
-
-                test_file << "data.addRows([" << std::endl;
-
-                non_first_comma comma;
-                for (auto & r : results)
-                {
-                    if (r.times.empty())
-                        continue;
-
-                    test_file << comma.get();
-
-                    //double mean = std::accumulate(r.times.begin(), r.times.end(), 0.0) / r.times.size();
-
-                    std::sort(r.times.begin(), r.times.end());
-                    size_t index_mid = r.times.size() / 2;
-                    double median = r.times.size() % 2 != 0 ?
-                        r.times[index_mid] :
-                        (r.times[index_mid] + r.times[index_mid - 1]) / 2.0;
-
-                    std::string sha = r.sha;
-                    if (sha.size() > 7)
-                        sha.resize(7);
-
-                    test_file << "['" << sha << "', " << std::fixed << std::setprecision(12) << median << ", ";
-                    for (size_t i = 0; i < max_times_size; ++i)
-                    {
-                        if (i < r.times.size())
-                            test_file << r.times[i];
-
-                        test_file << ", "; // last empty element must be ended with comma and for non-empty elements it doesn't matter
-                    }
-                    test_file << "]" << std::endl;
-                }
-
-                test_file
-                    << "]);" << std::endl
-
-                    << "var options = {" << std::endl
-                    << "curveType : 'none'," << std::endl
-                    << "intervals: { 'style':'points', pointSize: 5 }," << std::endl
-                    << "legend : 'none'" << std::endl
-                    << "};" << std::endl
-
-                    << "var chart = new google.visualization.LineChart(document.getElementById('" << elem_id << "'));" << std::endl
-                    << "chart.draw(data, options);" << std::endl
-
-                    << "var selectHandler = function(e) {" << std::endl
-                    << "var loc = 'https://github.com/boostorg/geometry/commit/' + data.getValue(chart.getSelection()[0]['row'], 0 );" << std::endl
-                    << "window.location = loc;" << std::endl
-                    << "window.top.location = loc;" << std::endl
-                    << "};" << std::endl
-
-                    << "google.visualization.events.addListener(chart, 'select', selectHandler);" << std::endl
-
-                    << "}" << std::endl;
-            }
-        }
-
-        test_file
-            << "</script></head>" << std::endl
-            << "<body>" << std::endl;
-
-        for (auto const& t : all_tests)
-        {
-            std::string id = to_valid_id(t.first);
-            std::string elem_id = std::string("chart_") + id;
-
-            test_file << "<h3 id=\"" << id << "\" style=\"margin-bottom:0;\">" << t.first << "</h3>";
-            test_file << "<div id=\"" << elem_id << "\">";
-
-            test_file << "</div>";
-        }
-
-        test_file
-            << "</body></html>";
-    }
-    */
 
     return 0;
 }
