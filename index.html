@@ -9,45 +9,58 @@
 	
 	google.charts.load('current', {'packages':['corechart']});
 	
+	function meanDistance(array, val)
+	{
+		var result = 0;
+		if (array.length > 0) {
+			for (var j = 0; j < array.length; ++j) {
+				result += Math.abs(array[j] - val);
+			}
+			result /= array.length;
+		}
+		return result;
+	}
+	
 	function drawChart(index) {
 		var test = data[index];
 		var id_chart = test.id + '_chart';
 		var max_times_size = max_times_sizes[index];
 		
-		var table = new google.visualization.DataTable();		
+		var table = new google.visualization.DataTable();
+		// add columns
 		table.addColumn('string', 'sha');
 		table.addColumn('number', 'time');
 		for (var i = 0; i < max_times_size; ++i)
 			table.addColumn({type : 'number', role : 'interval' });
-		//table.addColumn('number', 'time64');
-		//for (var i = 0; i < max_times_size; ++i)
-		//	table.addColumn({type : 'number', role : 'interval' });
 		
+		// add rows
 		for (var i = 0; i < test.results.length; ++i) {
 			var result = test.results[i];
+			// add first col - sha
 			var row = [result.sha.substring(0, 7)];
+			// calculate mean distance from median
+			var mean_dist = meanDistance(result.times, result.median);
+			// add median (line) if there are any times gathered
 			if (result.times.length > 0) {
 				row.push(result.median);
 			} else {
 				row.push(null);
 			}
+			// add times (points/intervals)
 			for (var j = 0; j < result.times.length; ++j) {
-				row.push(result.times[j]);
+				// add time if it's not far from the average, null otherwise
+				var dist = Math.abs(result.times[j] - result.median);
+				if (dist < 2 * mean_dist) {
+					row.push(result.times[j]);
+				} else {
+					row.push(null);
+				}
 			}
+			// fill the rest of the columns with null values
 			for (var j = result.times.length; j < max_times_size; ++j) {
 				row.push(null);
 			}
-			/*if (result.times_64.length > 0) {
-				row.push(result.median_64);
-			} else {
-				row.push(null);
-			}
-			for (var j = 0; j < result.times_64.length; ++j) {
-				row.push(result.times_64[j]);
-			}
-			for (var j = result.times_64.length; j < max_times_size; ++j) {
-				row.push(null);
-			}*/
+			// add the row
 			table.addRow(row);
 		}
 
@@ -105,11 +118,8 @@
 			var max_times_size = 0;
 			for (j = 0; j < data[i].results.length; j++) {
 				var times = data[i].results[j].times;
-				//var times_64 = data[i].results[j].times_64;
 				if (times.length > max_times_size)
 					max_times_size = times.length;
-				//if (times_64.length > max_times_size)
-				//	max_times_size = times_64.length;
 			}
 			max_times_sizes[i] = max_times_size;
 			
