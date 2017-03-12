@@ -31,7 +31,7 @@ int main()
 
     data::zigzags(N, linestring_zigzag1, linestring_zigzag2);
 
-
+    // relate
     benchmark::run("relate-disjoint-polygon-zero", [&]() {
         return relate(polygon, polygon_zero, de9im::mask("FF*FF****"));
     });
@@ -54,6 +54,30 @@ int main()
         return relate(linestring_zigzag1, linestring_zigzag2, de9im::mask("FF*FF****"));
     });
 
+    // relation
+    benchmark::run("relation-polygon-zero", [&]() {
+        return relation(polygon, polygon_zero)[0];
+    });
+    benchmark::run("relation-polygon-min", [&]() {
+        return relation(polygon, polygon_min)[0];
+    });
+    benchmark::run("relation-polygon-max", [&]() {
+        return relation(polygon, polygon_max)[0];
+    });
+    benchmark::run("relation-linestring-zero", [&]() {
+        return relation(linestring, linestring_zero)[0];
+    });
+    benchmark::run("relation-linestring-min", [&]() {
+        return relation(linestring, linestring_min)[0];
+    });
+    benchmark::run("relation-linestring-max", [&]() {
+        return relation(linestring, linestring_max)[0];
+    });
+    benchmark::run("relation-linestring-zigzag", [&]() {
+        return relation(linestring_zigzag1, linestring_zigzag2)[0];
+    });
+
+    // intersects
     benchmark::run("intersects-polygon-zero", [&]() {
         return intersects(polygon, polygon_zero);
     });
@@ -76,6 +100,7 @@ int main()
         return intersects(linestring_zigzag1, linestring_zigzag2);
     });
 
+    // touches
     benchmark::run("touches-polygon-zero", [&]() {
         return touches(polygon, polygon_zero);
     });
@@ -86,14 +111,17 @@ int main()
         return touches(polygon, polygon_max);
     });
 
+    // self-touches
     benchmark::run("touches-polygon", [&]() {
         return touches(polygon);
     });
 
+    // self-intersects
     benchmark::run("intersects-polygon", [&]() {
         return intersects(polygon);
     });
 
+    // is_valid
     benchmark::run("is_valid-polygon", [&]() {
         return is_valid(polygon);
     });
