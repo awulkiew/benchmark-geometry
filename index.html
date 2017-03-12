@@ -29,9 +29,10 @@
 		var table = new google.visualization.DataTable();
 		// add columns
 		table.addColumn('string', 'sha');
-		table.addColumn('number', 'time');
+		table.addColumn('number', '');
 		for (var i = 0; i < max_times_size; ++i)
 			table.addColumn({type : 'number', role : 'interval' });
+		table.addColumn({type: 'string', role: 'tooltip'});
 		
 		// add rows
 		for (var i = 0; i < test.results.length; ++i) {
@@ -60,12 +61,15 @@
 			for (var j = result.times.length; j < max_times_size; ++j) {
 				row.push(null);
 			}
+			// add tooltip
+			row.push(result.sha + '\n' + result.timestamp + '\n' + result.median);
 			// add the row
 			table.addRow(row);
 		}
 
 		var options = {
 			curveType : 'none',
+			focusTarget: 'category',
 			intervals: { 'style':'points', pointSize: 5 },
 			legend : 'none'
 		};
