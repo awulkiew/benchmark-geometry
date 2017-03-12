@@ -63,8 +63,10 @@ inline std::string to_valid_id(std::string const& str)
 
 struct result_times
 {
-    std::string timestamp;
+    result_times(std::string const& sha_) : sha(sha_) {}
+
     std::string sha;
+    std::string timestamp;
     std::vector<double> times_32;
     std::vector<double> times_64;
 };
@@ -116,6 +118,27 @@ inline double calculate_median(RIt first, RIt last)
 typedef std::map<std::string, std::vector<double>> new_tests_map;
 typedef std::map<std::string, std::vector<result_times>> tests_map;
 
+result_times & insert_by_sha(std::vector<result_times> & results, std::string const& sha)
+{
+    auto it = std::find_if(results.begin(), results.end(),
+                           [&](result_times const& r) {
+                               return r.sha == sha;
+                           });
+    if (it != results.end())
+        return *it;
+
+    results.push_back(result_times(sha));
+    return results.back();
+}
+
+void sort_by_timestamp(std::vector<result_times> & results)
+{
+    std::sort(results.begin(), results.end(),
+              [](result_times const& r1, result_times const& r2) {
+                  return r1.timestamp < r2.timestamp;
+              });
+}
+
 inline bool load_new_results(std::string const& commit_file_path,
                              new_tests_map & new_tests)
 {
@@ -165,40 +188,26 @@ inline void load_old_results_integrate_and_save(std::string const& output_dir_pr
             std::ifstream test_file(output_dir_prefix + t.first + ".txt");
             while (test_file.good())
             {
-                result_times result;
-                readline(test_file, result.timestamp, result.sha, get_times(result));
-                if (!result.timestamp.empty() && !result.sha.empty())
+                std::string sha;
+                std::string timestamp;
+                std::vector<double> times;
+                readline(test_file, timestamp, sha, times);
+                if (!timestamp.empty() && !sha.empty() && !times.empty())
                 {
-                    results.push_back(result);
+                    result_times & res = insert_by_sha(results, sha);
+                    res.timestamp = timestamp;
+                    get_times(res) = times;
                 }
             }
         }
 
-        result_times current_result;
-        current_result.timestamp = commit_time;
-        current_result.sha = commit_name;
-        get_times(current_result) = t.second;
-
         // merge the latest result
-        auto it = std::find_if(results.begin(), results.end(),
-                               [&](result_times const& r) {
-                                   return r.sha == commit_name;
-                               });
-
-        if (it != results.end())
-        {
-            *it = current_result;
-        }
-        else
-        {
-            results.push_back(current_result);
-        }
+        result_times & res = insert_by_sha(results, commit_name);
+        res.timestamp = commit_time;
+        get_times(res) = t.second;
 
         // sort the results by timestamp
-        std::sort(results.begin(), results.end(),
-                  [](result_times const& r1, result_times const& r2) {
-                     return r1.timestamp < r2.timestamp;
-                  });
+        sort_by_timestamp(results);
 
         // save the commit file
         {
