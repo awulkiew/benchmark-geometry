@@ -231,10 +231,10 @@ int main(int argc, char * argv[])
     std::string output_dir_prefix = output_dir_name.empty() ? "" : output_dir_name + "/";
 
     new_tests_map new_tests_32, new_tests_64;
-    bool ok = load_new_results(std::string("m32/") + commit_name, new_tests_32)
-           || load_new_results(std::string("m64/") + commit_name, new_tests_64);
+    bool ok1 = load_new_results(std::string("m32/") + commit_name, new_tests_32);
+    bool ok2 = load_new_results(std::string("m64/") + commit_name, new_tests_64);
 
-    if (! ok)
+    if (! ok1 && ! ok2)
     {
         return 1;
     }
