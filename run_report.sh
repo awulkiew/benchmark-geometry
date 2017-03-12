@@ -20,8 +20,6 @@ if [ "$#" -gt 2 ]; then
 fi
 
 mkdir -p $RESULTS_DIR
-mkdir -p $RESULTS_DIR/m32
-mkdir -p $RESULTS_DIR/m64
 
 echo 'Generating report';
 g++ -std="c++11" report/report.cpp -o build/report

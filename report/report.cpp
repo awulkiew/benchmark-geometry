@@ -67,20 +67,13 @@ struct result_times
 
     std::string sha;
     std::string timestamp;
-    std::vector<double> times_32;
-    std::vector<double> times_64;
+    std::vector<double> times;
 };
 
-struct get_times_32
+struct get_times
 {
-    std::vector<double> & operator()(result_times & rt) const { return rt.times_32; }
-    std::vector<double> const& operator()(result_times const& rt) const { return rt.times_32; }
-};
-
-struct get_times_64
-{
-    std::vector<double> & operator()(result_times & rt) const { return rt.times_64; }
-    std::vector<double> const& operator()(result_times const& rt) const { return rt.times_64; }
+    std::vector<double> & operator()(result_times & rt) const { return rt.times; }
+    std::vector<double> const& operator()(result_times const& rt) const { return rt.times; }
 };
 
 struct non_first_comma
@@ -239,21 +232,16 @@ int main(int argc, char * argv[])
     std::string output_dir_name = argv[3];
     std::string output_dir_prefix = output_dir_name.empty() ? "" : output_dir_name + "/";
 
-    new_tests_map new_tests_32, new_tests_64;
-    bool ok1 = load_new_results(std::string("m32/") + commit_name, new_tests_32);
-    bool ok2 = load_new_results(std::string("m64/") + commit_name, new_tests_64);
-
-    if (! ok1 && ! ok2)
+    new_tests_map new_tests;
+    if (!load_new_results(commit_name, new_tests))
     {
         return 1;
     }
 
     // load old tests, integrate new tests and save data
     tests_map all_tests;
-    load_old_results_integrate_and_save(output_dir_prefix + "m32/", commit_time, commit_name,
-                                        new_tests_32, all_tests, get_times_32());
-    load_old_results_integrate_and_save(output_dir_prefix + "m64/", commit_time, commit_name,
-                                        new_tests_64, all_tests, get_times_64());
+    load_old_results_integrate_and_save(output_dir_prefix, commit_time, commit_name,
+                                        new_tests, all_tests, get_times());
 
     // save js containing json
     {
@@ -285,23 +273,13 @@ int main(int argc, char * argv[])
                 file << comma.get() << "{" /*<< std::endl*/;
                 file << "\"timestamp\": \"" << r.timestamp << "\"," /*<< std::endl*/;
                 file << "\"sha\": \"" << r.sha << "\"," /*<< std::endl*/;
-                file << "\"median_32\": " << calculate_median(r.times_32.begin(), r.times_32.end()) << "," /*<< std::endl*/;
-                file << "\"median_64\": " << calculate_median(r.times_64.begin(), r.times_64.end()) << "," /*<< std::endl*/;
-                file << "\"times_32\": [";
+                file << "\"median\": " << calculate_median(r.times.begin(), r.times.end()) << "," /*<< std::endl*/;
+                file << "\"times\": [";
                 {
                     non_first_comma comma;
-                    for (size_t i = 0; i < r.times_32.size(); ++i)
+                    for (size_t i = 0; i < r.times.size(); ++i)
                     {
-                        file << comma.get() << r.times_32[i];
-                    }
-                }
-                file << "],"/* << std::endl*/;
-                file << "\"times_64\": [";
-                {
-                    non_first_comma comma;
-                    for (size_t i = 0; i < r.times_64.size(); ++i)
-                    {
-                        file << comma.get() << r.times_64[i];
+                        file << comma.get() << r.times[i];
                     }
                 }
                 file << "]"/* << std::endl*/;
