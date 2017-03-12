@@ -94,30 +94,46 @@
 		for (i = 0; i < data.length; i++) {
 			var name = data[i].name;
 			var id = data[i].id;
-		
-			var span_anchor = document.createElement('span');
-			span_anchor.setAttribute('class', 'anchor');
-			span_anchor.setAttribute('id', id);
-			div_charts.appendChild(span_anchor);
+			
+			var div_group = null;
+			
+			var group_name = name.substring(0, name.indexOf("-"));
+			var id_group = 'id_' + group_name;
+			if (test_groups.indexOf(group_name) < 0) {
+				test_groups.push(group_name);
+				
+				div_group = document.createElement('div');
+				div_group.setAttribute('class', 'group');
+				div_group.setAttribute('id', id_group);
+				div_charts.appendChild(div_group);
+				
+				var span_anchor = document.createElement('span');
+				span_anchor.setAttribute('class', 'anchor');
+				span_anchor.setAttribute('id', id_group + '_a');
+				div_group.appendChild(span_anchor);
+				
+				var h2_title = document.createElement('h2');
+				h2_title.setAttribute('class', 'group-title');
+				h2_title.innerHTML = group_name;
+				div_group.appendChild(h2_title);
+						
+				var a_menu_test = document.createElement('a');
+				a_menu_test.setAttribute('href', '#' + id_group + '_a');
+				a_menu_test.innerHTML = group_name;
+				div_menu_tests.appendChild(a_menu_test);
+			} else {
+				div_group = document.getElementById(id_group);
+			}
 		
 			var h3_title = document.createElement('h3');
 			h3_title.setAttribute('class', 'test-title');
 			h3_title.innerHTML = name;
-			div_charts.appendChild(h3_title);
+			div_group.appendChild(h3_title);
 			
 			var id_chart = id + '_chart';
 			var div_chart = document.createElement('div');
 			div_chart.setAttribute('id', id_chart);
-			div_charts.appendChild(div_chart);
-			
-			var group_name = name.substring(0, name.indexOf("-"));
-			if (test_groups.indexOf(group_name) < 0) {
-				var a_menu_test = document.createElement('a');
-				a_menu_test.setAttribute('href', '#' + id);
-				a_menu_test.innerHTML = group_name;
-				div_menu_tests.appendChild(a_menu_test);
-				test_groups.push(group_name);
-			}
+			div_group.appendChild(div_chart);
 			
 			var max_times_size = 0;
 			for (j = 0; j < data[i].results.length; j++) {
@@ -150,13 +166,13 @@
 .dropdown {
     position: relative;
     display: inline-block;
+	float: left;
 }
 .dropdown-content {
     display: none;
     position: absolute;
     background-color: #fafafa;
-	font-size: 16px;
-    min-width: 220px;
+    min-width: 160px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     /*z-index: 1;*/
 }
@@ -165,6 +181,10 @@
     padding: 5px 5px;
     text-decoration: none;
     display: block;
+	font-family: "Courier New", Courier, monospace;
+	font-size: 16px;
+	font-weight: bold;
+	color: #39507a;
 }
 .dropdown-content a:hover {background-color: #f1f1f1}
 .dropdown:hover .dropdown-content {
@@ -177,28 +197,57 @@ a.dropbtn, a.dropbtn:visited, a.dropbtn:hover, a.dropbtn:active {
 	text-decoration:none;
 	color:#49608a;
 }
+.separator {
+	display: inline-block;
+	width: 10px;
+	float: left;
+}
 .anchor {
    display:block;
    height:48px;
    margin-top:-48px;
    visibility:hidden;
 }
-.test-title {
-	margin: 1em 0 0 1em;
+#menu {
+	position: fixed;
+	left: 0;
+	top: 0;
+	height: 48px;
+	width: 100%;
+	z-index: 1;
+	display: block;
+	background-color: white;
+	border-bottom: 1px solid grey;
 }
+.group {
+	border-top: 1px solid #aaaaaa;
+	padding-bottom: 10px;
+}
+.group-title {
+	padding: 10px 0 0 16px;
+	margin: 0;
+	font-family: "Courier New", Courier, monospace;
+	color: #49608a;
+}
+.test-title {
+	margin: 16px 0 0 48px;
+	font-family: "Courier New", Courier, monospace;
+	color: #666666;
+}
+
 </style>
 </head>
 <body style="margin: 0;">
-<div id="menu" style="position: fixed; left: 0; top: 0; width: 100%; z-index:1; display:block; background-color: white; border-bottom: 1px solid grey;">
+<div id="menu">
 	<a href="https://github.com/boostorg/geometry">
 		<img src="https://github.com/boostorg/geometry/raw/develop/doc/other/logo/logo64x64.png" style="float:left; height: 48px; width: 48px;"/>
 	</a>
-	<div class="separator" style="float:left; height: 48px; width: 10px;"></div>
-	<div class="dropdown" style="float:left;">
+	<div class="separator"></div>
+	<div class="dropdown">
 		<div class="dropbtn">RESULTS</div>
 		<div class="dropdown-content" id="id_menu_tests"></div>
 	</div>
-	<div class="dropdown" style="float:left;">
+	<div class="dropdown">
 		<a class="dropbtn" href="https://github.com/awulkiew/benchmark-geometry">GITHUB</a>
 	</div>
 </div>
