@@ -131,16 +131,20 @@
 				div_group = document.getElementById(id_group);
 			}
 		
+			var div_member = document.createElement('div');
+			div_member.setAttribute('class', 'member');
+			div_group.appendChild(div_member);
+			
 			var h3_title = document.createElement('h3');
 			h3_title.setAttribute('class', 'test-title');
 			h3_title.innerHTML = name;
-			div_group.appendChild(h3_title);
+			div_member.appendChild(h3_title);
 			
 			var id_chart = id + '_chart';
 			var div_chart = document.createElement('div');
 			div_chart.setAttribute('id', id_chart);
 			div_chart.setAttribute('class', 'chart');
-			div_group.appendChild(div_chart);
+			div_member.appendChild(div_chart);
 			
 			var max_times_size = 0;
 			for (j = 0; j < data[i].results.length; j++) {
@@ -153,6 +157,13 @@
 			if (max_times_size > 0) {
 				google.charts.setOnLoadCallback(new Function(data[i].id, 'drawChart(' + i + ')'));
 			}
+		}
+		
+		for (var i = 0; i < test_groups.length; i++) {
+			var div_group = document.getElementById('id_' + test_groups[i]);
+			var div_clear = document.createElement('div');
+			div_clear.setAttribute('style', 'clear: both;');
+			div_group.appendChild(div_clear);
 		}
 	};
 //]]>
@@ -230,6 +241,11 @@ a.dropbtn, a.dropbtn:visited, a.dropbtn:hover, a.dropbtn:active {
 .group {
 	border-top: 1px solid #aaaaaa;
 	padding-bottom: 10px;
+	width: 100%;
+}
+.member {
+	/*width: 100%;*/ /*100% 50% 33%*/
+	/*float: left;*/
 }
 .group-title {
 	padding: 10px 0 0 16px;
@@ -238,7 +254,7 @@ a.dropbtn, a.dropbtn:visited, a.dropbtn:hover, a.dropbtn:active {
 	color: #49608a;
 }
 .test-title {
-	margin: 16px 0 0 48px;
+	margin: 20px 0 0 48px;
 	font-family: "Courier New", Courier, monospace;
 	color: #666666;
 }
