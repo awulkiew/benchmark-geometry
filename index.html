@@ -9,163 +9,163 @@
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
 //<![CDATA[
-	var data = JSON.parse(data_json);
-	var max_times_sizes = [];
-	
-	google.charts.load('current', {'packages':['corechart']});
-	
-	function meanDistance(array, val)
-	{
-		var result = 0;
-		if (array.length > 0) {
-			for (var j = 0; j < array.length; ++j) {
-				result += Math.abs(array[j] - val);
-			}
-			result /= array.length;
-		}
-		return result;
-	}
-	
-	function drawChart(index) {
-		var test = data[index];
-		var id_chart = test.id + '_chart';
-		var max_times_size = max_times_sizes[index];
-		
-		var table = new google.visualization.DataTable();
-		// add columns
-		table.addColumn('string', 'sha');
-		table.addColumn('number', '');
-		for (var i = 0; i < max_times_size; ++i)
-			table.addColumn({type : 'number', role : 'interval' });
-		table.addColumn({type: 'string', role: 'tooltip'});
-		
-		// add rows
-		for (var i = 0; i < test.results.length; ++i) {
-			var result = test.results[i];
-			// add first col - sha
-			var row = [result.sha.substring(0, 7)];
-			// calculate mean distance from median
-			var mean_dist = meanDistance(result.times, result.median);
-			// add median (line) if there are any times gathered
-			if (result.times.length > 0) {
-				row.push(result.median);
-			} else {
-				row.push(null);
-			}
-			// add times (points/intervals)
-			for (var j = 0; j < result.times.length; ++j) {
-				// add time if it's not far from the average, null otherwise
-				var dist = Math.abs(result.times[j] - result.median);
-				if (dist < 2 * mean_dist) {
-					row.push(result.times[j]);
-				} else {
-					row.push(null);
-				}
-			}
-			// fill the rest of the columns with null values
-			for (var j = result.times.length; j < max_times_size; ++j) {
-				row.push(null);
-			}
-			// add tooltip
-			row.push(result.sha + '\n' + result.timestamp + '\n' + result.median);
-			// add the row
-			table.addRow(row);
-		}
+    var data = JSON.parse(data_json);
+    var max_times_sizes = [];
+    
+    google.charts.load('current', {'packages':['corechart']});
+    
+    function meanDistance(array, val)
+    {
+        var result = 0;
+        if (array.length > 0) {
+            for (var j = 0; j < array.length; ++j) {
+                result += Math.abs(array[j] - val);
+            }
+            result /= array.length;
+        }
+        return result;
+    }
+    
+    function drawChart(index) {
+        var test = data[index];
+        var id_chart = test.id + '_chart';
+        var max_times_size = max_times_sizes[index];
+        
+        var table = new google.visualization.DataTable();
+        // add columns
+        table.addColumn('string', 'sha');
+        table.addColumn('number', '');
+        for (var i = 0; i < max_times_size; ++i)
+            table.addColumn({type : 'number', role : 'interval' });
+        table.addColumn({type: 'string', role: 'tooltip'});
+        
+        // add rows
+        for (var i = 0; i < test.results.length; ++i) {
+            var result = test.results[i];
+            // add first col - sha
+            var row = [result.sha.substring(0, 7)];
+            // calculate mean distance from median
+            var mean_dist = meanDistance(result.times, result.median);
+            // add median (line) if there are any times gathered
+            if (result.times.length > 0) {
+                row.push(result.median);
+            } else {
+                row.push(null);
+            }
+            // add times (points/intervals)
+            for (var j = 0; j < result.times.length; ++j) {
+                // add time if it's not far from the average, null otherwise
+                var dist = Math.abs(result.times[j] - result.median);
+                if (dist < 2 * mean_dist) {
+                    row.push(result.times[j]);
+                } else {
+                    row.push(null);
+                }
+            }
+            // fill the rest of the columns with null values
+            for (var j = result.times.length; j < max_times_size; ++j) {
+                row.push(null);
+            }
+            // add tooltip
+            row.push(result.sha + '\n' + result.timestamp + '\n' + result.median);
+            // add the row
+            table.addRow(row);
+        }
 
-		var options = {
-			curveType : 'none',
-			focusTarget: 'category',
-			intervals: { 'style':'points', pointSize: 5 },
-			legend : 'none'
-		};
+        var options = {
+            curveType : 'none',
+            focusTarget: 'category',
+            intervals: { 'style':'points', pointSize: 5 },
+            legend : 'none'
+        };
 
-		var chart = new google.visualization.LineChart(document.getElementById(id_chart));
-		chart.draw(table, options);
-		
-		var selectHandler = function(e) {
-			var loc = 'https://github.com/boostorg/geometry/commit/' + table.getValue(chart.getSelection()[0]['row'], 0 );
-			window.location = loc;
-			window.top.location = loc;
-		};
-		google.visualization.events.addListener(chart, 'select', selectHandler);
-	}
-	
-	window.onload = function() {
-	
-		var div_charts = document.getElementById('id_charts');
-		var div_menu_tests = document.getElementById('id_menu_tests');
-		
-		var test_groups = [];
-		
-		for (i = 0; i < data.length; i++) {
-			var name = data[i].name;
-			var id = data[i].id;
-			
-			var div_group = null;
-			
-			var group_name = name.substring(0, name.indexOf("-"));
-			var id_group = 'id_' + group_name;
-			if (test_groups.indexOf(group_name) < 0) {
-				test_groups.push(group_name);
-				
-				div_group = document.createElement('div');
-				div_group.setAttribute('class', 'group');
-				div_group.setAttribute('id', id_group);
-				div_charts.appendChild(div_group);
-				
-				var span_anchor = document.createElement('span');
-				span_anchor.setAttribute('class', 'anchor');
-				span_anchor.setAttribute('id', id_group + '_a');
-				div_group.appendChild(span_anchor);
-				
-				var h2_title = document.createElement('h2');
-				h2_title.setAttribute('class', 'group-title');
-				h2_title.innerHTML = group_name;
-				div_group.appendChild(h2_title);
-						
-				var a_menu_test = document.createElement('a');
-				a_menu_test.setAttribute('href', '#' + id_group + '_a');
-				a_menu_test.innerHTML = group_name;
-				div_menu_tests.appendChild(a_menu_test);
-			} else {
-				div_group = document.getElementById(id_group);
-			}
-		
-			var div_member = document.createElement('div');
-			div_member.setAttribute('class', 'member');
-			div_group.appendChild(div_member);
-			
-			var h3_title = document.createElement('h3');
-			h3_title.setAttribute('class', 'test-title');
-			h3_title.innerHTML = name;
-			div_member.appendChild(h3_title);
-			
-			var id_chart = id + '_chart';
-			var div_chart = document.createElement('div');
-			div_chart.setAttribute('id', id_chart);
-			div_chart.setAttribute('class', 'chart');
-			div_member.appendChild(div_chart);
-			
-			var max_times_size = 0;
-			for (j = 0; j < data[i].results.length; j++) {
-				var times = data[i].results[j].times;
-				if (times.length > max_times_size)
-					max_times_size = times.length;
-			}
-			max_times_sizes[i] = max_times_size;
-			
-			if (max_times_size > 0) {
-				google.charts.setOnLoadCallback(new Function(data[i].id, 'drawChart(' + i + ')'));
-			}
-		}
-		
-		for (var i = 0; i < test_groups.length; i++) {
-			var div_group = document.getElementById('id_' + test_groups[i]);
-			var div_clear = document.createElement('div');
-			div_clear.setAttribute('style', 'clear: both;');
-			div_group.appendChild(div_clear);
-		}
-	};
+        var chart = new google.visualization.LineChart(document.getElementById(id_chart));
+        chart.draw(table, options);
+        
+        var selectHandler = function(e) {
+            var loc = 'https://github.com/boostorg/geometry/commit/' + table.getValue(chart.getSelection()[0]['row'], 0 );
+            window.location = loc;
+            window.top.location = loc;
+        };
+        google.visualization.events.addListener(chart, 'select', selectHandler);
+    }
+    
+    window.onload = function() {
+    
+        var div_charts = document.getElementById('id_charts');
+        var div_menu_tests = document.getElementById('id_menu_tests');
+        
+        var test_groups = [];
+        
+        for (i = 0; i < data.length; i++) {
+            var name = data[i].name;
+            var id = data[i].id;
+            
+            var div_group = null;
+            
+            var group_name = name.substring(0, name.indexOf("-"));
+            var id_group = 'id_' + group_name;
+            if (test_groups.indexOf(group_name) < 0) {
+                test_groups.push(group_name);
+                
+                div_group = document.createElement('div');
+                div_group.setAttribute('class', 'group');
+                div_group.setAttribute('id', id_group);
+                div_charts.appendChild(div_group);
+                
+                var span_anchor = document.createElement('span');
+                span_anchor.setAttribute('class', 'anchor');
+                span_anchor.setAttribute('id', id_group + '_a');
+                div_group.appendChild(span_anchor);
+                
+                var h2_title = document.createElement('h2');
+                h2_title.setAttribute('class', 'group-title');
+                h2_title.innerHTML = group_name;
+                div_group.appendChild(h2_title);
+                        
+                var a_menu_test = document.createElement('a');
+                a_menu_test.setAttribute('href', '#' + id_group + '_a');
+                a_menu_test.innerHTML = group_name;
+                div_menu_tests.appendChild(a_menu_test);
+            } else {
+                div_group = document.getElementById(id_group);
+            }
+        
+            var div_member = document.createElement('div');
+            div_member.setAttribute('class', 'member');
+            div_group.appendChild(div_member);
+            
+            var h3_title = document.createElement('h3');
+            h3_title.setAttribute('class', 'test-title');
+            h3_title.innerHTML = name;
+            div_member.appendChild(h3_title);
+            
+            var id_chart = id + '_chart';
+            var div_chart = document.createElement('div');
+            div_chart.setAttribute('id', id_chart);
+            div_chart.setAttribute('class', 'chart');
+            div_member.appendChild(div_chart);
+            
+            var max_times_size = 0;
+            for (j = 0; j < data[i].results.length; j++) {
+                var times = data[i].results[j].times;
+                if (times.length > max_times_size)
+                    max_times_size = times.length;
+            }
+            max_times_sizes[i] = max_times_size;
+            
+            if (max_times_size > 0) {
+                google.charts.setOnLoadCallback(new Function(data[i].id, 'drawChart(' + i + ')'));
+            }
+        }
+        
+        for (var i = 0; i < test_groups.length; i++) {
+            var div_group = document.getElementById('id_' + test_groups[i]);
+            var div_clear = document.createElement('div');
+            div_clear.setAttribute('style', 'clear: both;');
+            div_group.appendChild(div_clear);
+        }
+    };
 //]]>
 </script>
 
@@ -174,24 +174,26 @@
     background-color: white;
     color: #49608a;
     padding: 13px;
-	font-family: Arial;
+    font-family: Arial;
     font-size: 18px;
-	font-style: italic;
-	font-weight: bold;
+    font-style: italic;
+    font-weight: bold;
     border: none;
     cursor: pointer;
-	display: block;
+    display: block;
 }
 .dropdown {
     position: relative;
     display: inline-block;
-	float: left;
+    float: left;
 }
 .dropdown-content {
     display: none;
     position: absolute;
     background-color: #fafafa;
     min-width: 160px;
+    -webkit-box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     /*z-index: 1;*/
 }
@@ -200,10 +202,10 @@
     padding: 5px 5px;
     text-decoration: none;
     display: block;
-	font-family: "Courier New", Courier, monospace;
-	font-size: 16px;
-	font-weight: bold;
-	color: #39507a;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: #39507a;
 }
 .dropdown-content a:hover {background-color: #f1f1f1}
 .dropdown:hover .dropdown-content {
@@ -213,70 +215,70 @@
     background-color: #fafafa;
 }
 a.dropbtn, a.dropbtn:visited, a.dropbtn:hover, a.dropbtn:active {
-	text-decoration:none;
-	color:#49608a;
+    text-decoration:none;
+    color:#49608a;
 }
 .separator {
-	display: inline-block;
-	width: 10px;
-	float: left;
+    display: inline-block;
+    width: 10px;
+    float: left;
 }
 .anchor {
-   display:block;
-   height:48px;
-   margin-top:-48px;
-   visibility:hidden;
+    display:block;
+    height:48px;
+    margin-top:-48px;
+    visibility:hidden;
 }
 #menu {
-	position: fixed;
-	left: 0;
-	top: 0;
-	height: 48px;
-	width: 100%;
-	z-index: 1;
-	display: block;
-	background-color: white;
-	border-bottom: 1px solid grey;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 48px;
+    width: 100%;
+    z-index: 1;
+    display: block;
+    background-color: white;
+    border-bottom: 1px solid grey;
 }
 .group {
-	border-top: 1px solid #aaaaaa;
-	padding-bottom: 10px;
-	width: 100%;
+    border-top: 1px solid #aaaaaa;
+    padding-bottom: 10px;
+    width: 100%;
 }
 .member {
-	/*width: 100%;*/ /*100% 50% 33%*/
-	/*float: left;*/
+    /*width: 100%;*/ /*100% 50% 33%*/
+    /*float: left;*/
 }
 .group-title {
-	padding: 10px 0 0 16px;
-	margin: 0;
-	font-family: "Courier New", Courier, monospace;
-	color: #49608a;
+    padding: 10px 0 0 16px;
+    margin: 0;
+    font-family: "Courier New", Courier, monospace;
+    color: #49608a;
 }
 .test-title {
-	margin: 20px 0 0 48px;
-	font-family: "Courier New", Courier, monospace;
-	color: #666666;
+    margin: 20px 0 0 48px;
+    font-family: "Courier New", Courier, monospace;
+    color: #666666;
 }
 .chart {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 </style>
 </head>
 <body style="margin: 0;">
 <div id="menu">
-	<a href="https://github.com/boostorg/geometry">
-		<img src="https://github.com/boostorg/geometry/raw/develop/doc/other/logo/logo64x64.png" style="float:left; height: 48px; width: 48px;" alt=""/>
-	</a>
-	<div class="separator"></div>
-	<div class="dropdown">
-		<div class="dropbtn">RESULTS</div>
-		<div class="dropdown-content" id="id_menu_tests"></div>
-	</div>
-	<div class="dropdown">
-		<a class="dropbtn" href="https://github.com/awulkiew/benchmark-geometry">GITHUB</a>
-	</div>
+    <a href="https://github.com/boostorg/geometry">
+        <img src="https://github.com/boostorg/geometry/raw/develop/doc/other/logo/logo64x64.png" style="float:left; height: 48px; width: 48px;" alt=""/>
+    </a>
+    <div class="separator"></div>
+    <div class="dropdown">
+        <div class="dropbtn">RESULTS</div>
+        <div class="dropdown-content" id="id_menu_tests"></div>
+    </div>
+    <div class="dropdown">
+        <a class="dropbtn" href="https://github.com/awulkiew/benchmark-geometry">GITHUB</a>
+    </div>
 </div>
 <div id="id_charts" style="margin-top: 48px;"></div>
 </body>
